@@ -1,11 +1,11 @@
 import logging
-import datetime
 import imp
 import time
 import traceback
 import threading
 
 from will.mixins import ScheduleMixin, PluginModulesLibraryMixin
+from will.utils import pytz_now
 
 
 class Scheduler(ScheduleMixin, PluginModulesLibraryMixin):
@@ -87,7 +87,7 @@ class Scheduler(ScheduleMixin, PluginModulesLibraryMixin):
                         )
 
     def check_scheduled_actions(self):
-        now = datetime.datetime.now()
+        now = pytz_now()
 
         # Re-schedule random tasks at midnight
         if not hasattr(self, "last_random_schedule"):

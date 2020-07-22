@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import datetime
+import pytz
 from clint.textui import puts, colored
 from six.moves import html_parser
 
@@ -120,3 +122,9 @@ def sizeof_fmt(num, suffix='B'):
             return "%3.1f%s%s" % (num, unit, suffix)
         num /= 1024.0
     return "%.1f%s%s" % (num, 'Yi', suffix)
+
+def pytz_now():
+    return pytz.utc.localize(datetime.datetime.now())
+
+def pytz_datetime(datetime):
+    return pytz.utc.localize(datetime)

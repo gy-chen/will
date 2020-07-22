@@ -5,6 +5,7 @@ import time
 import traceback
 from apscheduler.triggers.cron import CronTrigger
 from will.mixins.pubsub import PubSubMixin
+from will.utils import pytz_now, pytz_datetime
 
 
 class ScheduleMixin(PubSubMixin, object):
@@ -94,9 +95,9 @@ class ScheduleMixin(PubSubMixin, object):
 
     def add_periodic_task(self, module_name, cls_name, function_name, sched_args,
                           sched_kwargs, ignore_scheduler_lock=False):
-        now = datetime.datetime.now()
+        now = pytz_now()
         ct = CronTrigger(*sched_args, **sched_kwargs)
-        when = ct.get_next_fire_time(now)
+        when = ct.get_next_fire_time(None, now)
         logging.info("ct.get_next_fire_time(now)")
         logging.info(when)
         item = {
@@ -131,7 +132,7 @@ class ScheduleMixin(PubSubMixin, object):
             raise Exception("start_hour is after end_hour!")
 
         # Get the next appropriate date
-        now = datetime.datetime.now()
+        now = pytz_now()
 
         # Work around crontab bug where if the hour has started, it's skipped.
         adjusted_start_hour = start_hour
@@ -140,7 +141,7 @@ class ScheduleMixin(PubSubMixin, object):
         adjusted_start_hour = "%s" % adjusted_start_hour
 
         ct = CronTrigger(hour=adjusted_start_hour, day_of_week=day_of_week)
-        fire_time = ct.get_next_fire_time(now)
+        fire_time = ct.get_next_fire_time(None, now)
 
         # If it's today, schedule it. Otherwise, it'll be scheduled at midnight of its run day.
         if fire_time.day == now.day:
@@ -154,7 +155,7 @@ class ScheduleMixin(PubSubMixin, object):
 
             times = random.sample(possible_times, num_times_per_day)
             for hour, minute in times:
-                when = datetime.datetime(now.year, now.month, now.day, hour, minute)
+                when = pytz_datetime(datetime.datetime(now.year, now.month, now.day, hour, minute))
 
                 # If we're starting up mid-day, this may not be true.
                 if when >= now:
