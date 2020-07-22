@@ -778,7 +778,7 @@ To set your %(name)s:
             self.startup_error("Error bootstrapping bottle", e)
         if bootstrapped:
             show_valid("Web server started at %s." % (settings.PUBLIC_URL,))
-            bottle.run(host='0.0.0.0', port=settings.HTTPSERVER_PORT, server='cherrypy', quiet=True)
+            bottle.run(host='0.0.0.0', port=settings.HTTPSERVER_PORT, server='wsgiref', quiet=True)
 
     @yappi_profile(return_callback=yappi_aggregate)
     def bootstrap_io(self):
