@@ -3,7 +3,7 @@ import random
 import signal
 import time
 import traceback
-from multiprocessing.queues import Empty
+from queue import Empty
 from will import settings
 from will.decorators import require_settings
 from will.mixins import PubSubMixin, SleepMixin
@@ -43,7 +43,10 @@ class AnalysisBackend(PubSubMixin, SleepMixin, object):
         raise NotImplementedError
 
     def start(self, name, **kwargs):
-        signal.signal(signal.SIGINT, signal.SIG_IGN)
+        try:
+            signal.signal(signal.SIGINT, signal.SIG_IGN)
+        except ValueError:
+            pass
         for k, v in kwargs.items():
             self.__dict__[k] = v
 

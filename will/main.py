@@ -6,7 +6,7 @@ import imp
 from importlib import import_module
 import inspect
 import logging
-from multiprocessing import Process, Queue
+from queue import Queue
 import operator
 import os
 from os.path import abspath, dirname
@@ -29,7 +29,7 @@ from will import settings
 from will.backends import analysis, execution, generation, io_adapters
 from will.backends.io_adapters.base import Event
 from will.mixins import ScheduleMixin, StorageMixin, ErrorMixin, SleepMixin,\
-    PluginModulesLibraryMixin, EmailMixin, PubSubMixin
+    PluginModulesLibraryMixin, EmailMixin, PubSubMixin, ThreadingMixing
 from will.scheduler import Scheduler
 from will.utils import show_valid, show_invalid, error, warn, note, print_head, Bunch
 
@@ -64,7 +64,7 @@ def yappi_aggregate(func, stats):
 
 
 class WillBot(EmailMixin, StorageMixin, ScheduleMixin, PubSubMixin, SleepMixin,
-              ErrorMixin, PluginModulesLibraryMixin):
+              ErrorMixin, PluginModulesLibraryMixin, ThreadingMixing):
 
     def __init__(self, **kwargs):
         if "template_dirs" in kwargs:
@@ -149,13 +149,13 @@ class WillBot(EmailMixin, StorageMixin, ScheduleMixin, PubSubMixin, SleepMixin,
             # signal.signal(signal.SIGTERM, self.handle_sys_exit)
 
             # Scheduler
-            self.scheduler_thread = Process(target=self.bootstrap_scheduler)
+            self.scheduler_thread = self.create_process(target=self.bootstrap_scheduler)
 
             # Bottle
-            self.bottle_thread = Process(target=self.bootstrap_bottle)
+            self.bottle_thread = self.create_process(target=self.bootstrap_bottle)
 
             # Event handler
-            self.incoming_event_thread = Process(target=self.bootstrap_event_handler)
+            self.incoming_event_thread = self.create_process(target=self.bootstrap_event_handler)
 
             self.io_threads = []
             self.analysis_threads = []
@@ -800,7 +800,7 @@ To set your %(name)s:
                         c = cls()
 
                         if hasattr(c, "stdin_process") and c.stdin_process:
-                            thread = Process(
+                            thread = self.create_process(
                                 target=c._start,
                                 args=(b,),
                             )
@@ -808,7 +808,7 @@ To set your %(name)s:
                             self.has_stdin_io_backend = True
                             self.io_threads.append(thread)
                         else:
-                            thread = Process(
+                            thread = self.create_process(
                                 target=c._start,
                                 args=(
                                     b,
@@ -839,7 +839,7 @@ To set your %(name)s:
                         and class_name != "AnalysisBackend"
                     ):
                         c = cls()
-                        thread = Process(
+                        thread = self.create_process(
                             target=c.start,
                             args=(b,),
                             kwargs={"bot": self},
@@ -868,7 +868,7 @@ To set your %(name)s:
                         and class_name != "GenerationBackend"
                     ):
                         c = cls()
-                        thread = Process(
+                        thread = self.create_process(
                             target=c.start,
                             args=(b,),
                             kwargs={"bot": self},

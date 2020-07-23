@@ -106,6 +106,9 @@ EXECUTION_BACKENDS = [
     # "will.backends.execution.all",
 ]
 
+# "process" or "threading"
+# THREADING_BACKEND = "process"
+
 # ------------------------------------------------------------------------------------
 # Backend-specific settings
 # ------------------------------------------------------------------------------------

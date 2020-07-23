@@ -6,10 +6,10 @@ from will import settings
 from will.decorators import require_settings
 from will.acl import verify_acl
 from will.abstractions import Event
-from multiprocessing import Process
+from will.mixins import ThreadingMixing
 
 
-class ExecutionBackend(object):
+class ExecutionBackend(ThreadingMixing, object):
     is_will_execution_backend = True
 
     def handle_execution(self, message, context):
@@ -92,7 +92,7 @@ class ExecutionBackend(object):
 
     def run_execute(self, target, *args, **kwargs):
         try:
-            t = Process(
+            t = self.create_process(
                 target=target,
                 args=args,
                 kwargs=kwargs,

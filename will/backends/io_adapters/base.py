@@ -10,12 +10,11 @@ import traceback
 
 from will import settings
 from will.utils import Bunch, show_valid, error, warn
-from will.mixins import PubSubMixin, SleepMixin, SettingsMixin
+from will.mixins import PubSubMixin, SleepMixin, SettingsMixin, ThreadingMixing
 from will.abstractions import Message, Event, Person
-from multiprocessing import Process
 
 
-class IOBackend(PubSubMixin, SleepMixin, SettingsMixin, object):
+class IOBackend(PubSubMixin, SleepMixin, SettingsMixin, ThreadingMixing, object):
     is_will_iobackend = True
     required_settings = []
 
@@ -59,7 +58,10 @@ class IOBackend(PubSubMixin, SleepMixin, SettingsMixin, object):
         return self.pubsub.publish("message.incoming", message, reference_message=message)
 
     def __start_event_listeners(self):
-        signal.signal(signal.SIGINT, signal.SIG_IGN)
+        try:
+            signal.signal(signal.SIGINT, signal.SIG_IGN)
+        except ValueError:
+            pass
         running = True
         while running:
             try:
@@ -108,7 +110,7 @@ class IOBackend(PubSubMixin, SleepMixin, SettingsMixin, object):
             if hasattr(self, "stdin_process") and self.stdin_process:
                 self.pubsub.subscribe(["message.incoming.stdin", ])
 
-            self.__event_listener_thread = Process(
+            self.__event_listener_thread = self.create_process(
                 target=self.__start_event_listeners,
             )
             self.__event_listener_thread.start()

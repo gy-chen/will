@@ -5,6 +5,7 @@ from .base import BasePubSub
 
 SKIP_TYPES = ["psubscribe", "punsubscribe", ]
 
+_connection_pool = None
 
 class RedisPubSub(BasePubSub):
     """
@@ -33,18 +34,8 @@ Examples:
     def __init__(self, settings, *args, **kwargs):
         self.verify_settings(quiet=True)
         super(RedisPubSub, self).__init__(*args, **kwargs)
-        url = parse.urlparse(settings.REDIS_URL)
-
-        if hasattr(url, "path"):
-            db = url.path[1:]
-        else:
-            db = 0
-        max_connections = int(getattr(settings, 'REDIS_MAX_CONNECTIONS', None))
-        connection_pool = redis.ConnectionPool(
-            max_connections=max_connections, host=url.hostname,
-            port=url.port, db=db, password=url.password
-        )
-        self.redis = redis.Redis(connection_pool=connection_pool)
+        
+        self.redis = redis.Redis(connection_pool=_connection_pool)
         self._pubsub = self.redis.pubsub()
 
     def publish_to_backend(self, topic, body_str):
@@ -65,5 +56,23 @@ Examples:
         return None
 
 
+def _bootstrap_global_connection_pool():
+    global _connection_pool
+    from will import settings
+
+    url = parse.urlparse(settings.REDIS_URL)
+
+    if hasattr(url, "path"):
+        db = url.path[1:]
+    else:
+        db = 0
+    max_connections = int(getattr(settings, 'REDIS_MAX_CONNECTIONS', None))
+    _connection_pool = redis.ConnectionPool(
+        max_connections=max_connections, host=url.hostname,
+        port=url.port, db=db, password=url.password
+    )
+
+
 def bootstrap(settings):
+    _bootstrap_global_connection_pool()
     return RedisPubSub(settings)
